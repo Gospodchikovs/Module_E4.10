@@ -1,0 +1,53 @@
+version: '3.7'
+
+services:
+  web:
+    # Берем Dockerfile из Dopckerhub
+    image: gospodchikovs/e4gospochikovs
+    command: gunicorn django_project.wsgi:application --bind 0.0.0.0:8000
+    # куда будут помещены данные из каталога app
+    #    volumes:
+    #      - ./app/:/usr/src/app/
+    # Открываем порт 8000 внутри и снаружи
+    ports:
+      - 8080:8000
+    # Файл содержащий переменные для контейнера
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=foo
+      - ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - POSTGRES_ENGINE=django.db.backends.postgresql
+      - POSTGRES_DB=django_db
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=django_password
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - DATABASE=postgres
+    depends_on:
+      - db
+  db:
+    # Образ и версия базы, которую мы будем использовать
+    image: postgres:12.0-alpine
+    # Внешний том(volume) и место где он будет подключен внутри контейнера
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data/
+      
+    environment:
+      # Учетные данные, которые можно будет переопределить
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=django_password
+      - POSTGRES_DB=django_db
+    expose:
+      - 5432
+    ports: 
+      - 5432:5432
+  nginx:
+    image: nginx
+#    build: ./nginx
+    ports:
+      - 81:80
+    depends_on:
+      - web
+
+volumes:
+  postgres_volume:
